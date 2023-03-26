@@ -1,5 +1,7 @@
 import pygame
 
+from collections import deque
+
 pygame.init()
 
 screen = pygame.display.set_mode((1080, 720))
@@ -58,23 +60,39 @@ def gameclickevent(gridX, gridY):
         if redTurn and not firstTurn and status[gridX][gridY] != "red" and (
                 (gridY != 0 and status[gridX][gridY - 1] == "red") or (gridX != 7 and status[gridX + 1][gridY] == "red") or (gridY != 7 and status[gridX][
                 gridY + 1] == "red") or (gridX != 0 and status[gridX - 1][gridY] == "red")):
+            
+
+            redTileCount += 1
             if status[gridX][gridY] == "yellow":
+                
+                status[gridX][gridY] = "red"
                 yellowTileCount -= 1
+                #print(bfs_v3([prevTurn],[prevTurn], redTurn, redTileCount, yellowTileCount, 1, 1, status))
+                print(bfs_v4(status, prevTurn, [], redTurn, 1, 1, redTileCount, yellowTileCount))
+            prevTurn = (gridX, gridY)
             status[gridX][gridY] = "red"
             redTurn = False
-            redTileCount += 1
-            prevTurn = (gridX, gridY)
-            bfs([(gridX, gridY)])
+            #bfs([(gridX, gridY)])
+
+
         elif not redTurn and not firstTurn and status[gridX][gridY] != "yellow" and (
                 (gridY != 0 and status[gridX][gridY - 1] == "yellow") or (gridX != 7 and status[gridX + 1][gridY] == "yellow") or (gridY != 7 and status[gridX][
             gridY + 1] == "yellow") or (gridX != 0 and status[gridX - 1][gridY] == "yellow")):
+
+
+            yellowTileCount += 1
             if status[gridX][gridY] == "red":
+                status[gridX][gridY] = "yellow"
                 redTileCount -= 1
+                #print(bfs_v3([prevTurn],[prevTurn], redTurn, redTileCount, yellowTileCount, 1, 1, status))
+                print(bfs_v4(status, prevTurn, [], redTurn, 1, 1, redTileCount, yellowTileCount))
+
+            prevTurn = (gridX, gridY)
             status[gridX][gridY] = "yellow"
             redTurn = True
-            yellowTileCount += 1
-            prevTurn = (gridX, gridY)
-            bfs([(gridX, gridY)])
+            #bfs([(gridX, gridY)])
+
+
         elif redTurn and firstTurn:
             if status[gridX][gridY] == "yellow":
                 yellowTileCount -= 1
@@ -82,18 +100,21 @@ def gameclickevent(gridX, gridY):
             redTurn = False
             redTileCount += 1
             prevTurn = (gridX, gridY)
-            bfs([(gridX, gridY)])
+            #bfs([(gridX, gridY)])
+            #print(bfs_v3([prevTurn],[prevTurn], redTurn, redTileCount, yellowTileCount, 1, 1, status))
         elif not redTurn and firstTurn:
             if status[gridX][gridY] == "red":
                 redTileCount -= 1
             status[gridX][gridY] = "yellow"
             # change it to red turn after bfs is completed
             # does bfs only need to run if e.g. red cell has been taken over by yellow? Surely yes?
-            redTurn = True
+            # bfs not needed on first turn
             yellowTileCount += 1
             firstTurn = False
             prevTurn = (gridX, gridY)
-            bfs([(gridX, gridY)])
+            #bfs([(gridX, gridY)])
+            #print(bfs_v3([prevTurn],[prevTurn], redTurn, redTileCount, yellowTileCount, 1, 1, status))
+            redTurn = True
 
 # determines if win condition is met
 def bfs(tileList):
@@ -188,6 +209,228 @@ def bfs(tileList):
             print('Visited list is {0}'.format(visitedList))
         if adjCount < redTileCount:
             print("Yellow wins!")
+
+def bfs_v2(visitedList, tileList, redTurn, actualRedCount, actualYellowCount, knownRedCount, knownYellowCount, status):
+    # tileList starts containing only the tile that the player has just clicked on.
+    # tileList is a 'waiting list' or queue of tiles that are known to exist and have yet to be visited.
+
+    x = tileList[0][0]
+    y = tileList[0][1]
+
+    # pop (x, y) from tileList
+    tileList.pop(0)
+
+    # add the current tile (x, y) to the visited list    
+    visitedList.append((x, y))
+
+    # if the RED player has just placed a tile:
+    if redTurn:
+
+        # we now check if RED has won the game, by seeing if YELLOW's tiles have been broken up.
+        while tileList:
+
+
+            # if there exists a tile to the north and it has not been visited, is not in the waiting list and is also yellow:
+            if y != 0 and (x, y-1) not in visitedList and (x, y-1) not in tileList and status[x][y-1] == "yellow":
+
+                # add the north tile to the waiting list
+                tileList.append((x, y-1))
+
+                # increment the known yellow count as we have found a new yellow tile
+                knownYellowCount += 1
+
+            # if there exists a tile to the east and it has not been visited, is not in the waiting list and is also yellow:
+            if x != 7 and (x+1, y) not in visitedList and (x+1, y) not in tileList and status[x+1][y] == "yellow":
+
+                # add the east tile to the waiting list
+                tileList.append((x+1, y))
+
+                # increment the known yellow count as we have found a new yellow tile
+                knownYellowCount += 1
+
+            # if there exists a tile to the south and it has not been visited, is not in the waiting list and is also yellow:
+            if y != 7 and (x, y+1) not in visitedList and (x, y+1) not in tileList and status[x][y+1] == "yellow":
+
+                # add the south tile to the waiting list
+                tileList.append((x, y+1))
+
+                # increment the known yellow count as we have found a new yellow tile
+                knownYellowCount += 1
+
+            # if there exists a tile to the west and it has not been visited, is not in the waiting list and is also yellow:
+            if x != 0 and (x-1, y) not in visitedList and (x-1, y) not in tileList and status[x-1][y] == "yellow":
+
+                # add the west tile to the waiting list
+                tileList.append((x-1, y))
+
+                # increment the known yellow count as we have found a new yellow tile
+                knownYellowCount += 1    
+                
+
+# recursive bfs to count the number of adjacent tiles of the same colour
+# knownRedCount and knownYellowCount should be initialised as 1
+def bfs_v3(visitedList, tileList, redTurn, actualRedCount, actualYellowCount, knownRedCount, knownYellowCount, status):
+
+    # change this to start from an adjacent tile to the one that was clicked on
+
+    if not tileList:
+        return "sodium"
+        if not redTurn and actualRedCount > knownRedCount:
+            return "YELLOW wins!"
+        elif redTurn and actualYellowCount > knownYellowCount:
+            return "RED wins!"
+        else:
+            return "Keep playing!"
+
+    # pop tile from tileList
+    currentTile = tileList.pop(0)
+    x = currentTile[0]
+    y = currentTile[1]
+    print("x = " + str(x))
+    print("y = " + str(y))
+
+    if redTurn:
+
+        # if there exists a tile to the north and it has not been visited, is not in the waiting list and is also yellow:
+        if y != 0 and (x, y-1) not in visitedList and status[x][y-1] == "yellow":
+
+            # add the north tile to the visited list
+            visitedList.append((x, y-1))
+
+            # add the north tile to the waiting list
+            tileList.append((x, y-1))
+
+            # increment the known yellow count as we have found a new yellow tile
+            knownYellowCount += 1
+
+        # if there exists a tile to the east and it has not been visited, is not in the waiting list and is also yellow:
+        if x != 7 and (x+1, y) not in visitedList and status[x+1][y] == "yellow":
+
+            # add the east tile to the waiting list
+            tileList.append((x+1, y))
+
+            # increment the known yellow count as we have found a new yellow tile
+            knownYellowCount += 1
+
+        # if there exists a tile to the south and it has not been visited, is not in the waiting list and is also yellow:
+        if y != 7 and (x, y+1) not in visitedList and status[x][y+1] == "yellow":
+
+            # add the south tile to the waiting list
+            tileList.append((x, y+1))
+
+            # increment the known yellow count as we have found a new yellow tile
+            knownYellowCount += 1
+
+        # if there exists a tile to the west and it has not been visited, is not in the waiting list and is also yellow:
+        if x != 0 and (x-1, y) not in visitedList and status[x-1][y] == "yellow":
+
+            # add the west tile to the waiting list
+            tileList.append((x-1, y))
+
+            # increment the known yellow count as we have found a new yellow tile
+            knownYellowCount += 1
+
+    else:
+
+        # if there exists a tile to the north and it has not been visited, is not in the waiting list and is also red:
+        if y != 0 and (x, y-1) not in visitedList and status[x][y-1] == "red":
+
+            # add the north tile to the visited list
+            visitedList.append((x, y-1))
+
+            # add the north tile to the waiting list
+            tileList.append((x, y-1))
+
+            # increment the known red count as we have found a new red tile
+            knownRedCount += 1
+
+        # if there exists a tile to the east and it has not been visited, is not in the waiting list and is also red:
+        if x != 7 and (x+1, y) not in visitedList and status[x+1][y] == "red":
+
+            # add the east tile to the waiting list
+            tileList.append((x+1, y))
+
+            # increment the known red count as we have found a new red tile
+            knownRedCount += 1
+
+        # if there exists a tile to the south and it has not been visited, is not in the waiting list and is also red:
+        if y != 7 and (x, y+1) not in visitedList and status[x][y+1] == "red":
+
+            # add the south tile to the waiting list
+            tileList.append((x, y+1))
+
+            # increment the known red count as we have found a new red tile
+            knownRedCount += 1
+
+        # if there exists a tile to the west and it has not been visited, is not in the waiting list and is also red:
+        if x != 0 and (x-1, y) not in visitedList and status[x-1][y] == "red":
+
+            # add the west tile to the waiting list
+            tileList.append((x-1, y))
+
+            # increment the known red count as we have found a new red tile
+            knownRedCount += 1
+
+    bfs_v3(visitedList, tileList, redTurn, actualRedCount, actualRedCount, knownRedCount, knownYellowCount, status)
+
+def bfs_v4(status, tile, visitedList, redTurn, knownRedCount, knownYellowCount, actualRedCount, actualYellowCount):
+    
+    x = tile[0]
+    y = tile[1]
+
+    print("Starting from " + str(x), ", " + str(y))
+
+    q = deque()
+
+    visitedList.append(tile)
+
+    q.append(tile)
+
+    while q:
+    
+        tile = q.popleft()
+
+        x = tile[0]
+        y = tile[1]
+
+        adjTiles = [(x,y-1),(x+1,y),(x,y+1),(x-1,y)]
+
+        for i in range(4):
+            x = adjTiles[i][0]
+            y = adjTiles[i][1]
+            print("Checking " + str(x), ", " + str(y))
+            if x == -1 or y == -1 or x == 8 or y == 8:
+                break
+            if redTurn and (x,y) not in visitedList and status[x][y] == "yellow":
+                visitedList.append((x, y))
+                q.append((x, y))
+                print("Counting " + str(x) + ", " + str(y))
+                knownYellowCount += 1
+                print(str(knownYellowCount))
+            if not redTurn and (x,y) not in visitedList and status[x][y] == "red":
+                visitedList.append((x, y))
+                q.append((x, y))
+                print("Counting " + str(x) + ", " + str(y))
+                knownRedCount += 1
+                print(str(knownRedCount))
+
+    if redTurn and knownYellowCount < actualYellowCount:
+        return "Red wins!"
+    elif not redTurn and knownRedCount < actualRedCount:
+        return "Yellow wins!"
+    else:
+        return "Keep playing!"
+
+
+        
+
+        
+
+    
+
+
+
+
 
 running = True
 while running:
